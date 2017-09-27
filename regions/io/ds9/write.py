@@ -39,6 +39,8 @@ def ds9_objects_to_string(regions, coordsys='fk5', fmt='.4f', radunit='deg'):
         shapes.ellipse.EllipsePixelRegion: 'pixellipse',
         shapes.polygon.PolygonSkyRegion: 'skypolygon',
         shapes.polygon.PolygonPixelRegion: 'pixpolygon',
+        shapes.rectangle.RectangleSkyRegion: 'skyrectangle',
+        shapes.rectangle.RectanglePixelRegion: 'pixrectangle',
     }
 
     if radunit == 'arcsec':
@@ -53,6 +55,7 @@ def ds9_objects_to_string(regions, coordsys='fk5', fmt='.4f', radunit='deg'):
         'circle': 'circle({x:' + fmt + '},{y:' + fmt + '},{r:' + fmt + '}' + radunitstr + ')\n',
         'ellipse': 'ellipse({x:' + fmt + '},{y:' + fmt + '},{r1:' + fmt + '}' + radunitstr + ',{r2:' + fmt + '}' + radunitstr + ',{ang:' + fmt + '})\n',
         'polygon': 'polygon({c})\n',
+        'box': 'box({x:' + fmt + '},{y:' + fmt + '},{h: ' + fmt + '},{w:' + fmt + '},{ang:' + fmt + '})\n',
     }
 
     output = '# Region file format: DS9 astropy/regions\n'
@@ -105,6 +108,20 @@ def ds9_objects_to_string(regions, coordsys='fk5', fmt='.4f', radunit='deg'):
             temp = [val.format(x) for _ in coords for x in _]
             c = ",".join(temp)
             output += ds9_strings['polygon'].format(**locals())
+        elif isinstance(reg, shapes.rectangle.RectangleSkyRegion):
+            x = float(reg.center.transform_to(frame).spherical.lon.to('deg').value)
+            y = float(reg.center.transform_to(frame).spherical.lat.to('deg').value)
+            w = float(reg.width.to(radunit).value)
+            h = float(reg.height.to(radunit).value)
+            ang = float(reg.angle.to('deg').value)
+            output += ds9_strings['box'].format(**locals())
+        elif isinstance(reg, shapes.rectangle.RectanglePixelRegion):
+            x = reg.center.x
+            y = reg.center.y
+            h = reg.height
+            w = reg.width
+            ang = reg.angle
+            output += ds9_strings['box'].format(**locals())
 
     return output
 
